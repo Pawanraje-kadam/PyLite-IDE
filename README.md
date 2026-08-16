@@ -1,7 +1,5 @@
 # 🚀 PyLite-IDE — Python in your Browser
 
-![PyLite-IDE](./assets/brand-banner.png)  
-
 A modern, minimalist Python IDE that runs entirely in your browser — no install, no setup, just code. ✨
 
 ---
