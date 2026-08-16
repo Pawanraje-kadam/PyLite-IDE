@@ -4,14 +4,12 @@
 
 A modern, minimalist Python IDE that runs entirely in your browser — no install, no setup, just code. ✨
 
-[🔗 Live Demo](https://your-demo-link.example) • [📄 Docs](https://your-docs-link.example) • [🤝 Sponsor](https://your-sponsor-link.example)
-
 ---
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/Pawanraje-kadam/PyLite-IDE/actions)
 [![Open Issues](https://img.shields.io/github/issues/Pawanraje-kadam/PyLite-IDE.svg)](https://github.com/Pawanraje-kadam/PyLite-IDE/issues)
-[![Demo](https://img.shields.io/badge/demo-online-orange.svg)](https://your-demo-link.example)
+
 
 ---
 
