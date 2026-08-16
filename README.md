@@ -1,4 +1,8 @@
-# 🐍 PyLite IDE
+<p align="center">
+  <img src="assets/logo-readme.png" width="160" alt="PyLite IDE logo">
+</p>
+
+<h1 align="center">🐍 PyLite IDE</h1>
 
 A Python IDE that runs entirely in your browser. No install, no backend, no build step — clone it and open `index.html`.
 
