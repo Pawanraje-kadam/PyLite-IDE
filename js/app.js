@@ -10,28 +10,13 @@ import { initTheme, toggleTheme } from './theme.js';
 import { getAllFiles, getActiveFileId, setActiveFileId, createFile,
          deleteFile, updateFileCode, ensureDefaultFile, getFileById } from './storage.js';
 import { initUI, switchPanel, clearConsole, appendConsole, appendPlot,
-         showToast, setRunButtonState, showInlineInput,
-         appendTerminal, clearTerminal } from './ui.js';
+         showToast, setRunButtonState, showInlineInput } from './ui.js';
 import { initToolbar } from './toolbar.js';
 import { renderPackageList, installCustomPackage } from './packages.js';
 import { getCodeFromURL, generateShareURL, copyToClipboard } from './share.js';
 
 let currentFileId = null;
 let filesDrawerOpen = false;
-
-window.__pylite_run_terminal_command = async code => {
-  appendTerminal('>>> ' + code, 'input');
-  try {
-    await runCode(code, {
-      onStdout: t => appendTerminal(t, 'stdout'),
-      onStderr: t => appendTerminal(t, 'stderr'),
-      onRunStateChange: s => setRunButtonState(s),
-      onInputRequest: () => null,
-    });
-  } catch (err) {
-    appendTerminal(err?.message || String(err), 'stderr');
-  }
-};
 
 /* ─── Global for error-line click ─── */
 window._pylite_goToLine = ln => {
