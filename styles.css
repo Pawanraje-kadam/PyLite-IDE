@@ -257,56 +257,6 @@ a,button,input,textarea,select,[role="button"]{touch-action:manipulation}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   height:100%;gap:12px;color:var(--text-tertiary);font-family:system-ui,sans-serif;font-size:14px;
 }
-.terminal-toggle{
-  position:absolute;right:12px;bottom:12px;z-index:1200;
-  border:none;border-radius:999px;
-  background:var(--accent);color:var(--accent-text);
-  box-shadow:0 8px 20px rgba(0,0,0,.25);font-size:13px;font-weight:700;
-  cursor:grab;padding:10px 14px;min-height:44px;display:block;
-  user-select:none;touch-action:none;
-}
-.terminal-toggle.dragging{cursor:grabbing;transform:scale(.98)}
-.terminal-shell{
-  position:absolute;right:12px;bottom:72px;z-index:1100;
-  width:min(92vw, 420px);max-height:60vh;
-  display:flex;
-  border:1px solid var(--border);border-radius:var(--r-lg);
-  background:var(--bg-secondary);
-  padding:10px 12px 12px;
-  display:flex;flex-direction:column;gap:8px;
-  box-shadow:var(--shadow-lg);
-  overflow:hidden;
-}
-.terminal-output{
-  flex:1;min-height:90px;overflow-y:auto;
-  font-family:'JetBrains Mono',ui-monospace,monospace;
-  font-size:12px;line-height:1.5;color:var(--text-primary);
-  white-space:pre-wrap;word-break:break-word;
-  padding:4px 2px;
-}
-.terminal-help{
-  color:var(--text-secondary);
-  font-style:italic;
-}
-.terminal-line{margin:0}
-.terminal-line.input{color:var(--accent)}
-.terminal-line.system{color:var(--text-tertiary)}
-.terminal-line.stderr{color:var(--error-text)}
-.terminal-input-row{
-  display:flex;align-items:center;gap:8px;
-  border:1px solid var(--border);border-radius:var(--r-sm);
-  background:var(--bg-primary);padding:8px 10px;
-}
-.terminal-clear-btn{
-  border:none;border-radius:var(--r-sm);padding:6px 8px;background:var(--bg-secondary);
-  color:var(--text-secondary);cursor:pointer;font-size:12px;min-height:32px;
-}
-.terminal-prompt{color:var(--accent);font-weight:700;user-select:none}
-.terminal-input{
-  flex:1;min-width:0;border:none;outline:none;background:transparent;
-  color:var(--text-primary);font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;
-}
-.terminal-input::placeholder{color:var(--text-tertiary)}
 .console-line{margin:0}
 .console-line.stderr{color:var(--error-text)}
 .console-line.system{color:var(--text-tertiary);font-style:italic;font-size:12px}
