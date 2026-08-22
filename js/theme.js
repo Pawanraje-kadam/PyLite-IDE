@@ -23,7 +23,7 @@ export function toggleTheme() {
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = theme === 'dark' ? '#0a0e17' : '#ffffff';
+  if (meta) meta.content = theme === 'dark' ? '#09090d' : '#f4f1ea';
   const btn = document.getElementById('btn-theme');
   if (btn) {
     btn.innerHTML = theme === 'dark'
