@@ -52,9 +52,14 @@ function initViewport() {
 
 /* ─── CONSOLE OUTPUT ─── */
 const PH = `<div class="console-placeholder" id="console-placeholder">
-  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5">
-    <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
-  </svg><p>Run your code to see output here</p></div>`;
+  <div class="console-placeholder-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+    </svg>
+  </div>
+  <p>Run your code to see output here</p>
+  <span>Ctrl+Enter · ⌘+Enter</span>
+</div>`;
 
 export function clearConsole() { if (consoleEl) consoleEl.innerHTML = PH; }
 

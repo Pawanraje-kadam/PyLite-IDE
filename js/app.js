@@ -183,6 +183,8 @@ function wireButtons() {
   document.getElementById('btn-run-desktop').addEventListener('click', doRunStop);
   // Files drawer (desktop)
   document.getElementById('btn-files-desktop').addEventListener('click', toggleFilesDrawer);
+  const filesBackdrop = document.getElementById('files-backdrop');
+  if (filesBackdrop) filesBackdrop.addEventListener('click', () => { if (filesDrawerOpen) toggleFilesDrawer(); });
   // Font
   document.getElementById('btn-font-up').addEventListener('click', () => setFontSize(getFontSize() + 1));
   document.getElementById('btn-font-down').addEventListener('click', () => setFontSize(getFontSize() - 1));
@@ -215,14 +217,21 @@ function wireButtons() {
       e.preventDefault();
       if (currentFileId) { updateFileCode(currentFileId, getCode()); showToast('Saved'); }
     }
+    if (e.key === 'Escape') {
+      const overlay = document.getElementById('pkg-modal-overlay');
+      if (overlay && !overlay.classList.contains('hidden')) overlay.classList.add('hidden');
+      else if (filesDrawerOpen) toggleFilesDrawer();
+    }
   });
 }
 
 function toggleFilesDrawer() {
   filesDrawerOpen = !filesDrawerOpen;
   const p = document.getElementById('panel-files');
+  const btn = document.getElementById('btn-files-desktop');
   if (filesDrawerOpen) { p.classList.add('active'); renderFilesList(); }
   else p.classList.remove('active');
+  if (btn) btn.classList.toggle('active', filesDrawerOpen);
 }
 
 async function doRunStop() {
