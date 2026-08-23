@@ -96,12 +96,52 @@ export function appendConsole(text, type) {
 
 export function appendPlot(b64) {
   rmPh();
+  const wrap = document.createElement('div');
+  wrap.className = 'console-plot-wrap';
   const img = document.createElement('img');
   img.className = 'console-plot';
   img.src = 'data:image/png;base64,' + b64;
   img.alt = 'Matplotlib plot';
-  consoleEl.appendChild(img);
+  const dl = document.createElement('button');
+  dl.type = 'button';
+  dl.className = 'chrome-btn plot-save';
+  dl.textContent = 'Save plot';
+  dl.addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = 'pylite-plot.png';
+    a.click();
+  });
+  wrap.append(img, dl);
+  consoleEl.appendChild(wrap);
   consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+export function getConsolePlainText() {
+  if (!consoleEl) return '';
+  return Array.from(consoleEl.querySelectorAll('.console-line'))
+    .map(el => el.textContent).join('\n');
+}
+
+export function showConfirm({ title, message, okLabel }) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-title').textContent = title || 'Are you sure?';
+    document.getElementById('confirm-msg').textContent = message || '';
+    const ok = document.getElementById('confirm-ok');
+    ok.textContent = okLabel || 'OK';
+    overlay.classList.remove('hidden');
+    const done = v => {
+      overlay.classList.add('hidden');
+      ok.removeEventListener('click', onOk);
+      document.getElementById('confirm-cancel').removeEventListener('click', onCancel);
+      resolve(v);
+    };
+    const onOk = () => done(true);
+    const onCancel = () => done(false);
+    ok.addEventListener('click', onOk);
+    document.getElementById('confirm-cancel').addEventListener('click', onCancel);
+  });
 }
 
 /* ─── INLINE INPUT (for Python input()) ───

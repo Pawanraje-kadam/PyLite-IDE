@@ -84,6 +84,22 @@ function curLine() {
   return textarea.value.substring(0, textarea.selectionStart).split('\n').length - 1;
 }
 
+function insertText(text) {
+  textarea.focus();
+  if (document.execCommand && document.execCommand('insertText', false, text)) {
+    return true;
+  }
+  const s = textarea.selectionStart, en = textarea.selectionEnd, v = textarea.value;
+  textarea.value = v.substring(0, s) + text + v.substring(en);
+  textarea.selectionStart = textarea.selectionEnd = s + text.length;
+  return false;
+}
+
+function setRange(start, end) {
+  textarea.selectionStart = start;
+  textarea.selectionEnd = end == null ? start : end;
+}
+
 /* ─── TAB handling ─── */
 function handleTab(e) {
   e.preventDefault();
@@ -370,11 +386,74 @@ export function goToLine(ln) {
 }
 
 export function insertAtCursor(text) {
-  const s = textarea.selectionStart, v = textarea.value;
-  textarea.value = v.substring(0, s) + text + v.substring(textarea.selectionEnd);
-  textarea.selectionStart = textarea.selectionEnd = s + text.length;
-  textarea.focus();
+  insertText(text);
   updateAll(); triggerChange(); rawChanged(textarea.value);
 }
 
 export function focusEditor() { textarea.focus(); }
+
+export function toggleComment() {
+  const s = textarea.selectionStart, en = textarea.selectionEnd, v = textarea.value;
+  const ls = v.lastIndexOf('\n', s - 1) + 1;
+  let le = v.indexOf('\n', Math.max(en - (en > ls && v[en - 1] === '\n' ? 1 : 0), ls));
+  if (le < 0) le = v.length;
+  const lines = v.substring(ls, le).split('\n');
+  const allCommented = lines.every(l => !l.trim() || l.trimStart().startsWith('#'));
+  const next = lines.map(l => {
+    if (!l.trim()) return l;
+    if (allCommented) return l.replace(/^(\s*)# ?/, '$1');
+    return l.replace(/^(\s*)/, '$1# ');
+  }).join('\n');
+  textarea.focus();
+  textarea.setSelectionRange(ls, le);
+  insertText(next);
+  updateAll(); triggerChange(); rawChanged(textarea.value);
+}
+
+export function findMatches(query) {
+  if (!query) return [];
+  const v = textarea.value;
+  const out = [];
+  let i = 0;
+  while (i < v.length) {
+    const j = v.indexOf(query, i);
+    if (j < 0) break;
+    out.push(j);
+    i = j + Math.max(1, query.length);
+  }
+  return out;
+}
+
+export function selectRange(start, len) {
+  textarea.focus();
+  textarea.setSelectionRange(start, start + len);
+  const ln = textarea.value.substring(0, start).split('\n').length;
+  const lh = fontSize * 1.6;
+  textarea.scrollTop = Math.max(0, (ln - 1) * lh - textarea.clientHeight / 2);
+  currentLine = ln - 1;
+  updateGutter(textarea.value);
+}
+
+export function replaceRange(start, len, text) {
+  textarea.focus();
+  textarea.setSelectionRange(start, start + len);
+  insertText(text);
+  updateAll(); triggerChange(); rawChanged(textarea.value);
+}
+
+export function replaceAll(query, text) {
+  if (!query) return 0;
+  const v = textarea.value;
+  if (!v.includes(query)) return 0;
+  const parts = v.split(query);
+  const n = parts.length - 1;
+  textarea.focus();
+  textarea.setSelectionRange(0, v.length);
+  insertText(parts.join(text));
+  updateAll(); triggerChange(); rawChanged(textarea.value);
+  return n;
+}
+
+export function getLineCount() {
+  return textarea.value.split('\n').length;
+}

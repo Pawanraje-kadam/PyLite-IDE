@@ -16,7 +16,7 @@ export function generateShareURL(code) {
     const enc = btoa(unescape(encodeURIComponent(code)));
     const url = new URL(window.location.href);
     url.hash = 'code=' + enc;
-    return url.toString();
+    return { url: url.toString(), tooLong: url.toString().length > 7500 };
   } catch { return null; }
 }
 
