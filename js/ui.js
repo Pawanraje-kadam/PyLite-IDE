@@ -34,6 +34,7 @@ export function getActivePanel() { return activePanel; }
 
 /* ─── VIEWPORT / KEYBOARD ─── */
 function initViewport() {
+  disablePinchZoom();
   if (!window.visualViewport) return;
   const app = document.getElementById('app');
   const onResize = () => {
@@ -48,6 +49,22 @@ function initViewport() {
   };
   window.visualViewport.addEventListener('resize', onResize);
   window.visualViewport.addEventListener('scroll', onResize);
+}
+
+/* Browser pinch-zoom fights the editor (caret jumps, chrome clips).
+   Viewport meta already sets user-scalable=no; these listeners cover
+   iOS gesture events and multi-touch pinches that ignore the meta tag. */
+function disablePinchZoom() {
+  const block = e => { e.preventDefault(); };
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+    document.addEventListener(type, block, { passive: false });
+  });
+  document.addEventListener('touchmove', e => {
+    if (e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('wheel', e => {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
 }
 
 /* ─── CONSOLE OUTPUT ─── */
@@ -66,6 +83,14 @@ export function clearConsole() { if (consoleEl) consoleEl.innerHTML = PH; }
 function rmPh() { const p = document.getElementById('console-placeholder'); if (p) p.remove(); }
 
 function escHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+function insertConsoleChild(el) {
+  if (!consoleEl) return;
+  const repl = document.getElementById('repl-row');
+  if (repl) consoleEl.insertBefore(el, repl);
+  else consoleEl.appendChild(el);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
 
 export function appendConsole(text, type) {
   rmPh();
@@ -90,8 +115,7 @@ export function appendConsole(text, type) {
   } else {
     el.textContent = text;
   }
-  consoleEl.appendChild(el);
-  consoleEl.scrollTop = consoleEl.scrollHeight;
+  insertConsoleChild(el);
 }
 
 export function appendPlot(b64) {
@@ -113,8 +137,7 @@ export function appendPlot(b64) {
     a.click();
   });
   wrap.append(img, dl);
-  consoleEl.appendChild(wrap);
-  consoleEl.scrollTop = consoleEl.scrollHeight;
+  insertConsoleChild(wrap);
 }
 
 export function getConsolePlainText() {
@@ -123,24 +146,34 @@ export function getConsolePlainText() {
     .map(el => el.textContent).join('\n');
 }
 
-export function showConfirm({ title, message, okLabel }) {
+export function showConfirm({ title, message, okLabel, danger }) {
   return new Promise(resolve => {
     const overlay = document.getElementById('confirm-overlay');
     document.getElementById('confirm-title').textContent = title || 'Are you sure?';
     document.getElementById('confirm-msg').textContent = message || '';
     const ok = document.getElementById('confirm-ok');
+    const cancel = document.getElementById('confirm-cancel');
     ok.textContent = okLabel || 'OK';
+    ok.classList.toggle('btn-danger', danger !== false && /delete|remove/i.test(okLabel || title || ''));
     overlay.classList.remove('hidden');
+    let settled = false;
     const done = v => {
+      if (settled) return;
+      settled = true;
       overlay.classList.add('hidden');
       ok.removeEventListener('click', onOk);
-      document.getElementById('confirm-cancel').removeEventListener('click', onCancel);
+      cancel.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBackdrop);
+      overlay.removeEventListener('overlay-close', onCancel);
       resolve(v);
     };
     const onOk = () => done(true);
     const onCancel = () => done(false);
+    const onBackdrop = e => { if (e.target === overlay) done(false); };
     ok.addEventListener('click', onOk);
-    document.getElementById('confirm-cancel').addEventListener('click', onCancel);
+    cancel.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBackdrop);
+    overlay.addEventListener('overlay-close', onCancel);
   });
 }
 

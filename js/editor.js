@@ -362,6 +362,7 @@ export function setFontSize(size) {
   fontSize = Math.max(10, Math.min(24, size));
   applyFontSize();
   const s = getSettings(); s.fontSize = fontSize; saveSettings(s);
+  if (textarea) { updateAll(); sizeEditor(); }
 }
 export function getFontSize() { return fontSize; }
 
@@ -381,7 +382,7 @@ export function goToLine(ln) {
   textarea.selectionStart = textarea.selectionEnd = pos;
   currentLine = ln - 1;
   updateGutter(textarea.value);
-  const lh = fontSize * 1.6;
+  const lh = fontSize * 1.7;
   textarea.scrollTop = Math.max(0, (ln - 1) * lh - textarea.clientHeight / 2);
 }
 
@@ -428,7 +429,7 @@ export function selectRange(start, len) {
   textarea.focus();
   textarea.setSelectionRange(start, start + len);
   const ln = textarea.value.substring(0, start).split('\n').length;
-  const lh = fontSize * 1.6;
+  const lh = fontSize * 1.7;
   textarea.scrollTop = Math.max(0, (ln - 1) * lh - textarea.clientHeight / 2);
   currentLine = ln - 1;
   updateGutter(textarea.value);

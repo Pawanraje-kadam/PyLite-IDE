@@ -10,7 +10,7 @@ import { initPyodide, setCallbacks, runCode, stopExecution,
 import { initTheme, toggleTheme } from './theme.js';
 import { getAllFiles, getActiveFileId, setActiveFileId, createFile,
          deleteFile, updateFileCode, ensureDefaultFile, getFileById,
-         renameFile, duplicateFile } from './storage.js';
+         renameFile, duplicateFile, getSettings, saveSettings } from './storage.js';
 import { initUI, switchPanel, clearConsole, appendConsole, appendPlot,
          showToast, setRunButtonState, showInlineInput, getConsolePlainText,
          showConfirm } from './ui.js';
@@ -19,10 +19,17 @@ import { renderPackageList, installCustomPackage, restoreSavedPackages } from '.
 import { getCodeFromURL, generateShareURL, copyToClipboard } from './share.js';
 
 let currentFileId = null;
-let filesDrawerOpen = false;
+let filesSidebarOpen = true;
 let findIdx = 0;
 let findHits = [];
 let dirty = false;
+
+const FILE_ICONS = {
+  rename: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  dup: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  dl: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
+};
 
 const EXAMPLES = [
   {
@@ -120,6 +127,7 @@ async function init() {
   initToolbar();
   initFindBar();
   initSplit();
+  applyFilesSidebar(getSettings().filesOpen !== false);
 
   ensureDefaultFile();
   loadActiveFile();
@@ -218,10 +226,10 @@ function renderFilesList() {
       <div class="file-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
       <div class="file-item-info"><div class="file-item-name">${esc(f.name)}</div><div class="file-item-meta">${lines} lines · ${ts}</div></div>
       <div class="file-item-actions">
-        <button class="file-item-delete file-act" data-act="rename" aria-label="Rename" title="Rename">Aa</button>
-        <button class="file-item-delete file-act" data-act="dup" aria-label="Duplicate" title="Duplicate">⧉</button>
-        <button class="file-item-delete file-act" data-act="dl" aria-label="Download" title="Download">↓</button>
-        <button class="file-item-delete" data-act="del" aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+        <button type="button" class="file-act-btn" data-act="rename" aria-label="Rename" title="Rename">${FILE_ICONS.rename}</button>
+        <button type="button" class="file-act-btn" data-act="dup" aria-label="Duplicate" title="Duplicate">${FILE_ICONS.dup}</button>
+        <button type="button" class="file-act-btn" data-act="dl" aria-label="Download" title="Download">${FILE_ICONS.dl}</button>
+        <button type="button" class="file-act-btn danger" data-act="del" aria-label="Delete" title="Delete">${FILE_ICONS.del}</button>
       </div>`;
     div.addEventListener('click', e => {
       const act = e.target.closest('[data-act]');
@@ -243,7 +251,6 @@ function openFile(id) {
   if (f) { setCode(f.code); updateFilename(f.name); clearErrorLine(); }
   markSaved();
   renderFilesList(); switchPanel('editor');
-  if (filesDrawerOpen && window.innerWidth < 768) toggleFilesDrawer();
 }
 
 function newFile() {
@@ -268,15 +275,16 @@ function dupFile(id) {
 
 async function delFile(id, name) {
   if (getAllFiles().length <= 1) { showToast('Cannot delete the last file'); return; }
-  const ok = await showConfirm({ title: 'Delete file', message: `Delete “${name}”? This cannot be undone.`, okLabel: 'Delete' });
+  const ok = await showConfirm({ title: 'Delete file', message: `Delete “${name}”? This cannot be undone.`, okLabel: 'Delete', danger: true });
   if (!ok) return;
-  const rem = deleteFile(id);
-  if (id === currentFileId) {
-    const nx = rem[0];
-    currentFileId = nx.id; setActiveFileId(nx.id);
-    setCode(nx.code); updateFilename(nx.name); clearErrorLine();
-  }
-  renderFilesList(); showToast('Deleted ' + name);
+    const rem = deleteFile(id);
+    if (id === currentFileId) {
+      const nx = rem[0];
+      currentFileId = nx.id; setActiveFileId(nx.id);
+      setCode(nx.code); updateFilename(nx.name); clearErrorLine();
+    }
+    markSaved();
+    renderFilesList(); showToast('Deleted ' + name);
 }
 
 function promptRename(id, current) {
@@ -285,10 +293,16 @@ function promptRename(id, current) {
   input.value = current;
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => { input.focus(); input.select(); });
+  let settled = false;
   const finish = apply => {
+    if (settled) return;
+    settled = true;
     overlay.classList.add('hidden');
     document.getElementById('rename-ok').onclick = null;
     document.getElementById('rename-cancel').onclick = null;
+    overlay.onclick = null;
+    overlay.removeEventListener('overlay-close', onClose);
+    input.onkeydown = null;
     if (!apply) return;
     const f = renameFile(id, input.value);
     if (!f) return;
@@ -296,11 +310,14 @@ function promptRename(id, current) {
     renderFilesList();
     showToast('Renamed to ' + f.name);
   };
+  const onClose = () => finish(false);
   document.getElementById('rename-ok').onclick = () => finish(true);
   document.getElementById('rename-cancel').onclick = () => finish(false);
+  overlay.onclick = e => { if (e.target === overlay) finish(false); };
+  overlay.addEventListener('overlay-close', onClose);
   input.onkeydown = e => {
-    if (e.key === 'Enter') finish(true);
-    if (e.key === 'Escape') finish(false);
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
   };
 }
 
@@ -344,6 +361,7 @@ function renderExamples() {
     div.className = 'pkg-item';
     div.innerHTML = `<div><div class="pkg-name">${esc(ex.title)}</div><div class="pkg-desc">${esc(ex.desc)}</div></div>`;
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'btn-install';
     btn.textContent = 'Open';
     btn.addEventListener('click', () => {
@@ -362,10 +380,16 @@ function wireButtons() {
   document.getElementById('btn-run').addEventListener('click', doRunStop);
   document.getElementById('btn-run-desktop').addEventListener('click', doRunStop);
   document.getElementById('btn-files-desktop').addEventListener('click', toggleFilesDrawer);
+  window.addEventListener('resize', () => {
+    const container = document.getElementById('panels-container');
+    if (!container) return;
+    if (window.innerWidth >= 768) applyFilesSidebar(filesSidebarOpen);
+  });
   const filesBackdrop = document.getElementById('files-backdrop');
-  if (filesBackdrop) filesBackdrop.addEventListener('click', () => { if (filesDrawerOpen) toggleFilesDrawer(); });
+  if (filesBackdrop) filesBackdrop.addEventListener('click', () => { if (filesSidebarOpen && window.innerWidth < 768) toggleFilesDrawer(); });
   document.getElementById('btn-font-up').addEventListener('click', () => setFontSize(getFontSize() + 1));
   document.getElementById('btn-font-down').addEventListener('click', () => setFontSize(getFontSize() - 1));
+  document.getElementById('font-size-label').addEventListener('click', () => setFontSize(14));
   document.getElementById('btn-theme').addEventListener('click', toggleTheme);
   document.getElementById('btn-share').addEventListener('click', doShare);
   document.getElementById('btn-new-file').addEventListener('click', newFile);
@@ -383,6 +407,7 @@ function wireButtons() {
   document.getElementById('btn-packages').addEventListener('click', () => {
     document.getElementById('pkg-modal-overlay').classList.remove('hidden');
     renderPackageList(document.getElementById('pkg-list'));
+    if (!isPyodideReady()) showToast('Python is still loading…');
   });
   document.getElementById('pkg-modal-close').addEventListener('click', () =>
     document.getElementById('pkg-modal-overlay').classList.add('hidden')
@@ -422,6 +447,8 @@ function wireButtons() {
 
   document.addEventListener('keydown', e => {
     const mod = e.ctrlKey || e.metaKey;
+    const inModal = e.target.closest && e.target.closest('.modal-overlay:not(.hidden)');
+    if (inModal && e.key !== 'Escape') return;
     if (mod && e.key === 'Enter') { e.preventDefault(); doRunStop(); }
     if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault();
@@ -432,26 +459,39 @@ function wireButtons() {
     if (mod && e.key === '/') { e.preventDefault(); toggleComment(); }
     if (mod && e.key.toLowerCase() === 'n') { e.preventDefault(); newFile(); }
     if (e.key === 'Escape') {
-      const overlays = ['pkg-modal-overlay', 'examples-overlay', 'help-overlay', 'rename-overlay', 'goto-overlay', 'confirm-overlay'];
-      let closed = false;
+      const overlays = ['confirm-overlay', 'rename-overlay', 'goto-overlay', 'pkg-modal-overlay', 'examples-overlay', 'help-overlay'];
       for (const id of overlays) {
         const el = document.getElementById(id);
-        if (el && !el.classList.contains('hidden')) { el.classList.add('hidden'); closed = true; }
+        if (el && !el.classList.contains('hidden')) {
+          el.classList.add('hidden');
+          el.dispatchEvent(new CustomEvent('overlay-close'));
+          e.preventDefault();
+          return;
+        }
       }
       const fb = document.getElementById('find-bar');
-      if (fb && !fb.classList.contains('hidden')) { fb.classList.add('hidden'); closed = true; }
-      if (!closed && filesDrawerOpen) toggleFilesDrawer();
+      if (fb && !fb.classList.contains('hidden')) { fb.classList.add('hidden'); e.preventDefault(); }
     }
   });
 }
 
-function toggleFilesDrawer() {
-  filesDrawerOpen = !filesDrawerOpen;
-  const p = document.getElementById('panel-files');
+function applyFilesSidebar(open) {
+  filesSidebarOpen = !!open;
+  const container = document.getElementById('panels-container');
   const btn = document.getElementById('btn-files-desktop');
-  if (filesDrawerOpen) { p.classList.add('active'); renderFilesList(); }
-  else p.classList.remove('active');
-  if (btn) btn.classList.toggle('active', filesDrawerOpen);
+  if (container) container.classList.toggle('files-collapsed', !filesSidebarOpen);
+  if (btn) {
+    btn.classList.toggle('active', filesSidebarOpen);
+    btn.setAttribute('aria-pressed', filesSidebarOpen ? 'true' : 'false');
+    btn.title = filesSidebarOpen ? 'Hide files sidebar' : 'Show files sidebar';
+  }
+  const s = getSettings();
+  s.filesOpen = filesSidebarOpen;
+  saveSettings(s);
+}
+
+function toggleFilesDrawer() {
+  applyFilesSidebar(!filesSidebarOpen);
 }
 
 function initFindBar() {
@@ -490,6 +530,11 @@ function openFind() {
   const bar = document.getElementById('find-bar');
   bar.classList.remove('hidden');
   const q = document.getElementById('find-input');
+  const ta = document.getElementById('editor-textarea');
+  if (ta && ta.selectionStart !== ta.selectionEnd) {
+    q.value = ta.value.substring(ta.selectionStart, ta.selectionEnd);
+    q.dispatchEvent(new Event('input'));
+  }
   q.focus(); q.select();
 }
 
@@ -500,17 +545,28 @@ function openGoto() {
   input.value = '';
   input.max = String(getLineCount());
   requestAnimationFrame(() => input.focus());
+  let settled = false;
   const finish = go => {
+    if (settled) return;
+    settled = true;
     overlay.classList.add('hidden');
+    document.getElementById('goto-ok').onclick = null;
+    document.getElementById('goto-cancel').onclick = null;
+    overlay.onclick = null;
+    overlay.removeEventListener('overlay-close', onClose);
+    input.onkeydown = null;
     if (!go) return;
     const n = parseInt(input.value, 10);
     if (n > 0) { goToLine(n); switchPanel('editor'); }
   };
+  const onClose = () => finish(false);
   document.getElementById('goto-ok').onclick = () => finish(true);
   document.getElementById('goto-cancel').onclick = () => finish(false);
+  overlay.onclick = e => { if (e.target === overlay) finish(false); };
+  overlay.addEventListener('overlay-close', onClose);
   input.onkeydown = e => {
-    if (e.key === 'Enter') finish(true);
-    if (e.key === 'Escape') finish(false);
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
   };
 }
 
@@ -529,12 +585,13 @@ function initSplit() {
   resizer.addEventListener('pointermove', e => {
     if (!dragging) return;
     const rect = container.getBoundingClientRect();
-    const filesW = getComputedStyle(container).gridTemplateColumns.split(' ')[0];
-    const filesPx = parseFloat(filesW) || 0;
+    const cols = getComputedStyle(container).gridTemplateColumns.split(' ');
+    const filesPx = parseFloat(cols[0]) || 0;
+    const avail = Math.max(1, rect.width - filesPx - 6);
     const x = e.clientX - rect.left - filesPx;
-    const avail = rect.width - filesPx - 6;
     const pct = Math.min(75, Math.max(25, (x / avail) * 100));
-    container.style.setProperty('--editor-col', pct + '%');
+    container.style.setProperty('--editor-col', pct + 'fr');
+    container.style.setProperty('--console-col', (100 - pct) + 'fr');
   });
   const stop = () => { dragging = false; document.body.style.cursor = ''; };
   resizer.addEventListener('pointerup', stop);
@@ -543,8 +600,11 @@ function initSplit() {
 
 function ensureRepl() {
   let row = document.getElementById('repl-row');
-  if (row) return row;
   const consoleEl = document.getElementById('console-output');
+  if (row) {
+    if (row.parentNode === consoleEl && row.nextSibling) consoleEl.appendChild(row);
+    return row;
+  }
   row = document.createElement('div');
   row.id = 'repl-row';
   row.className = 'console-input-row repl-row';

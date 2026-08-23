@@ -39,12 +39,25 @@ export function setActiveFileId(id) {
   localStorage.setItem(ACTIVE_KEY, id);
 }
 
+function uniqueName(files, name, exceptId) {
+  let n = (name || '').trim() || 'untitled.py';
+  if (!/\.[A-Za-z0-9]+$/.test(n)) n += '.py';
+  if (!files.some(f => f.id !== exceptId && f.name === n)) return n;
+  const m = n.match(/^(.*?)(\.[A-Za-z0-9]+)$/);
+  const base = m[1], ext = m[2];
+  let i = 2;
+  while (files.some(f => f.id !== exceptId && f.name === `${base}${i}${ext}`)) i++;
+  return `${base}${i}${ext}`;
+}
+
 export function createFile(name) {
   const files = getAllFiles();
   if (!name) {
     let n = files.length + 1;
     name = `script${n}.py`;
     while (files.some(f => f.name === name)) { n++; name = `script${n}.py`; }
+  } else {
+    name = uniqueName(files, name);
   }
   const file = { id: uid(), name, code: '', lastModified: Date.now() };
   files.push(file);
@@ -68,14 +81,7 @@ export function renameFile(id, name) {
   const files = getAllFiles();
   const f = files.find(x => x.id === id);
   if (!f) return null;
-  let n = (name || '').trim() || 'untitled.py';
-  if (!/\.[A-Za-z0-9]+$/.test(n)) n += '.py';
-  if (files.some(x => x.id !== id && x.name === n)) {
-    const base = n.replace(/\.py$/i, '');
-    let i = 2;
-    while (files.some(x => x.id !== id && x.name === `${base}${i}.py`)) i++;
-    n = `${base}${i}.py`;
-  }
+  const n = uniqueName(files, name, id);
   f.name = n;
   f.lastModified = Date.now();
   saveAllFiles(files);
