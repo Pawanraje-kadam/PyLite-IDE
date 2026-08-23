@@ -2,7 +2,7 @@
    PACKAGES — On-demand package loading
    ═══════════════════════════════════════ */
 
-import { installPackage, loadPyodidePackage } from './executor.js';
+import { installPackage, loadPyodidePackage, isPyodideReady } from './executor.js';
 import { getSavedPackages, saveInstalledPackage } from './storage.js';
 
 const PKGS = [
@@ -40,6 +40,12 @@ export function renderPackageList(container) {
 }
 
 async function doPkgInstall(pkg, btn) {
+  if (!isPyodideReady()) {
+    btn.textContent = 'Wait…';
+    setTimeout(() => { if (!installed.has(pkg.name)) { btn.textContent = 'Install'; btn.disabled = false; } }, 1400);
+    btn.disabled = true;
+    return;
+  }
   btn.disabled = true;
   btn.innerHTML = '<div class="pkg-spinner"></div>';
   try {
@@ -55,6 +61,7 @@ async function doPkgInstall(pkg, btn) {
 }
 
 export async function installCustomPackage(name) {
+  if (!isPyodideReady()) throw new Error('Python is still loading');
   await installPackage(name);
   installed.add(name);
   saveInstalledPackage({ name, type: 'micropip' });
