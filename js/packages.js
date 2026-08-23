@@ -57,4 +57,26 @@ async function doPkgInstall(pkg, btn) {
 export async function installCustomPackage(name) {
   await installPackage(name);
   installed.add(name);
+  saveInstalledPackage({ name, type: 'micropip' });
+}
+
+/* Re-install packages remembered from a previous visit so the next
+   session starts with the same library set. Failures are skipped so a
+   single missing wheel cannot block the editor from opening. */
+export async function restoreSavedPackages(onProgress) {
+  const saved = getSavedPackages();
+  if (!saved.length) return;
+  for (let i = 0; i < saved.length; i++) {
+    const pkg = saved[i];
+    if (typeof onProgress === 'function') {
+      onProgress(`Restoring ${pkg.name}… (${i + 1}/${saved.length})`);
+    }
+    try {
+      if (pkg.type === 'pyodide') await loadPyodidePackage(pkg.name);
+      else await installPackage(pkg.name);
+      installed.add(pkg.name);
+    } catch (_) {
+      /* keep going — editor is already usable without this package */
+    }
+  }
 }

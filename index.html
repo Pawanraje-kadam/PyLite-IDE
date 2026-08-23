@@ -344,5 +344,16 @@
   <!-- ═══════════════ SCRIPTS ═══════════════ -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js"></script>
   <script type="module" src="js/app.js"></script>
+  <script>
+    // If the module graph fails to boot, don't leave users on the splash forever.
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        var screen = document.getElementById('loading-screen');
+        if (screen && !screen.classList.contains('fade-out')) {
+          screen.classList.add('fade-out');
+        }
+      }, 8000);
+    });
+  </script>
 </body>
 </html>

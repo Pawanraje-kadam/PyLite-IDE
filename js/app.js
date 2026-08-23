@@ -615,4 +615,7 @@ async function doCustomPkg() {
 
 function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
-init();
+init().catch(err => {
+  console.error(err);
+  revealApp();
+});
