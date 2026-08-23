@@ -3,6 +3,7 @@
    ═══════════════════════════════════════ */
 
 import { installPackage, loadPyodidePackage } from './executor.js';
+import { getSavedPackages, saveInstalledPackage } from './storage.js';
 
 const PKGS = [
   { name: 'numpy',          desc: 'Numerical computing',      type: 'pyodide' },
@@ -16,7 +17,7 @@ const PKGS = [
   { name: 'regex',          desc: 'Advanced regex',           type: 'micropip' },
 ];
 
-const installed = new Set();
+const installed = new Set(getSavedPackages().map(p => p.name));
 
 export function renderPackageList(container) {
   container.innerHTML = '';
@@ -45,6 +46,7 @@ async function doPkgInstall(pkg, btn) {
     if (pkg.type === 'pyodide') await loadPyodidePackage(pkg.name);
     else await installPackage(pkg.name);
     installed.add(pkg.name);
+    saveInstalledPackage(pkg);
     btn.textContent = 'Installed'; btn.classList.add('installed');
   } catch {
     btn.textContent = 'Failed'; btn.style.background = 'var(--error-text)';

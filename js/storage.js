@@ -64,6 +64,52 @@ export function updateFileCode(id, code) {
   if (f) { f.code = code; f.lastModified = Date.now(); saveAllFiles(files); }
 }
 
+export function renameFile(id, name) {
+  const files = getAllFiles();
+  const f = files.find(x => x.id === id);
+  if (!f) return null;
+  let n = (name || '').trim() || 'untitled.py';
+  if (!/\.[A-Za-z0-9]+$/.test(n)) n += '.py';
+  if (files.some(x => x.id !== id && x.name === n)) {
+    const base = n.replace(/\.py$/i, '');
+    let i = 2;
+    while (files.some(x => x.id !== id && x.name === `${base}${i}.py`)) i++;
+    n = `${base}${i}.py`;
+  }
+  f.name = n;
+  f.lastModified = Date.now();
+  saveAllFiles(files);
+  return f;
+}
+
+export function duplicateFile(id) {
+  const files = getAllFiles();
+  const src = files.find(x => x.id === id);
+  if (!src) return null;
+  const base = src.name.replace(/\.py$/i, '');
+  let n = 2, name = `${base}-copy.py`;
+  while (files.some(f => f.name === name)) { name = `${base}-copy${n}.py`; n++; }
+  const file = { id: uid(), name, code: src.code, lastModified: Date.now() };
+  files.push(file);
+  saveAllFiles(files);
+  return file;
+}
+
+const PKGS_KEY = 'pylite_pkgs';
+
+export function getSavedPackages() {
+  try { return JSON.parse(localStorage.getItem(PKGS_KEY)) || []; }
+  catch { return []; }
+}
+
+export function saveInstalledPackage(entry) {
+  const list = getSavedPackages();
+  if (!list.some(p => p.name === entry.name)) {
+    list.push({ name: entry.name, type: entry.type || 'micropip' });
+    localStorage.setItem(PKGS_KEY, JSON.stringify(list));
+  }
+}
+
 export function getFileById(id) {
   return getAllFiles().find(f => f.id === id) || null;
 }

@@ -28,9 +28,11 @@ The interesting part isn't "Python in the browser" (Pyodide gives you that for f
 - 🗂️ Multi-file editor with autosave to `localStorage`
 - 📝 Custom syntax-highlighted editor (regex tokenizer over a `<textarea>` + synced overlay), with auto-indent and auto-closing brackets/quotes
 - 📦 On-demand package installs — common packages (`numpy`, `pandas`, `scipy`, `scikit-learn`, `sympy`, `Pillow`, `beautifulsoup4`, etc.) loadable from a package panel, plus a custom `micropip install <name>` field
-- 🔗 Shareable code via URL (base64-encoded in the hash, no server round-trip)
+- 🔗 Shareable code via URL (base64-encoded in the hash, no server round-trip) — long scripts fall back to a file download
 - 🎨 Light/dark themes, adjustable font size
-- 📱 Responsive layout — usable on phones and tablets, not just desktop
+- 📱 Responsive layout — split editor/console on desktop, tabbed on phones
+- 🔁 REPL after each run, copy/clear console, save matplotlib plots
+- 📦 Installed packages are remembered and restored on the next visit
 
 ## Stack
 
