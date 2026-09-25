@@ -3,17 +3,17 @@
    ═══════════════════════════════════════ */
 
 import { initEditor, setCode, getCode, onChange, setFontSize, getFontSize,
-         highlightErrorLine, clearErrorLine, goToLine, toggleComment,
-         findMatches, selectRange, replaceRange, replaceAll, getLineCount } from './editor.js';
+          highlightErrorLine, clearErrorLine, goToLine, toggleComment,
+          findMatches, selectRange, replaceRange, replaceAll, getLineCount } from './editor.js';
 import { initPyodide, setCallbacks, runCode, stopExecution,
-         getIsRunning, isPyodideReady } from './executor.js';
+          getIsRunning, isPyodideReady } from './executor.js';
 import { initTheme, toggleTheme } from './theme.js';
 import { getAllFiles, getActiveFileId, setActiveFileId, createFile,
-         deleteFile, updateFileCode, ensureDefaultFile, getFileById,
-         renameFile, duplicateFile, getSettings, saveSettings } from './storage.js';
+          deleteFile, updateFileCode, ensureDefaultFile, getFileById,
+          renameFile, duplicateFile, getSettings, saveSettings } from './storage.js';
 import { initUI, switchPanel, clearConsole, appendConsole, appendPlot,
-         showToast, setRunButtonState, showInlineInput, getConsolePlainText,
-         showConfirm } from './ui.js';
+          showToast, setRunButtonState, showInlineInput, getConsolePlainText,
+          showConfirm } from './ui.js';
 import { initToolbar } from './toolbar.js';
 import { renderPackageList, installCustomPackage, restoreSavedPackages } from './packages.js';
 import { getCodeFromURL, generateShareURL, copyToClipboard } from './share.js';
@@ -26,9 +26,9 @@ let dirty = false;
 
 const FILE_ICONS = {
   rename: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
-  dup: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  dup: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><path d="M15 8h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-4"/></svg>',
   dl: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-  del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
+  del: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
 };
 
 const EXAMPLES = [
@@ -41,6 +41,78 @@ print(f"Hello, {name}! Welcome to PyLite.")
 
 for i in range(1, 6):
     print(f"  {i} squared = {i**2}")
+`,
+  },
+  {
+    name: 'collections.py',
+    title: 'Python collections',
+    desc: 'Lists, dicts, and sorting',
+    code: `students = [
+    {"name": "Asha", "score": 92},
+    {"name": "Rahul", "score": 78},
+    {"name": "Maya", "score": 88},
+]
+
+ranked = sorted(students, key=lambda s: s["score"], reverse=True)
+
+for student in ranked:
+    status = "Pass" if student["score"] >= 80 else "Needs work"
+    print(f"{student['name']}: {student['score']} - {status}")
+`,
+  },
+  {
+    name: 'functions.py',
+    title: 'Functions',
+    desc: 'Reusable logic and recursion',
+    code: `def factorial(number):
+    if number <= 1:
+        return 1
+    return number * factorial(number - 1)
+
+for value in range(1, 8):
+    print(f"{value}! = {factorial(value)}")
+`,
+  },
+  {
+    name: 'text_analyzer.py',
+    title: 'Text analyzer',
+    desc: 'String counts and word frequency',
+    code: `text = """
+Python makes programming approachable.
+Python also works beautifully in the browser.
+"""
+
+words = text.lower().split()
+counts = {}
+
+for word in words:
+    cleaned = word.strip(".,!?")
+    counts[cleaned] = counts.get(cleaned, 0) + 1
+
+print("Total words:", len(words))
+print("Unique words:", len(counts))
+print("Word counts:")
+
+for word, count in sorted(counts.items()):
+    print(f"{word}: {count}")
+`,
+  },
+  {
+    name: 'safe_calculator.py',
+    title: 'Safe calculator',
+    desc: 'try/except and input validation',
+    code: `while True:
+    value = input("Enter a number, or q to quit: ")
+
+    if value.lower() == "q":
+        print("Goodbye!")
+        break
+
+    try:
+        number = float(value)
+        print("Square:", number ** 2)
+    except ValueError:
+        print("Please enter a valid number.")
 `,
   },
   {
@@ -86,6 +158,33 @@ for attempt in range(1, 6):
     print("Too low" if guess < secret else "Too high")
 else:
     print("The number was", secret)
+`,
+  },
+  {
+    name: 'bank.py',
+    title: 'Classes',
+    desc: 'Simple object-oriented example',
+    code: `class BankAccount:
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self.balance = balance
+
+    def deposit(self, amount):
+        self.balance += amount
+
+    def withdraw(self, amount):
+        if amount > self.balance:
+            print("Insufficient funds")
+        else:
+            self.balance -= amount
+
+    def summary(self):
+        print(f"{self.owner}'s balance: ${self.balance:.2f}")
+
+account = BankAccount("Alex", 100)
+account.deposit(50)
+account.withdraw(30)
+account.summary()
 `,
   },
 ];
@@ -223,7 +322,7 @@ function renderFilesList() {
                mod.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     const lines = (f.code || '').split('\n').length;
     div.innerHTML = `
-      <div class="file-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="file-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2 2H14"/><path d="M14 2v6h6"/><path d="M10 13h5"/><path d="M10 17h5"/></svg></div>
       <div class="file-item-info"><div class="file-item-name">${esc(f.name)}</div><div class="file-item-meta">${lines} lines · ${ts}</div></div>
       <div class="file-item-actions">
         <button type="button" class="file-act-btn" data-act="rename" aria-label="Rename" title="Rename">${FILE_ICONS.rename}</button>
